@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output        = "../src/generated/client"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model Customer {
+  id             Int              @id @default(autoincrement())
+  first_name     String           @db.VarChar(20)
+  last_name      String           @db.VarChar(20)
+  email          String           @unique @db.VarChar(30)
+  password       String           @db.VarChar(30)
+  phone_number   String           @db.Char(10)
+  address        String           @db.VarChar(50)
+  customer_have_voucher   Customer_have_Voucher[]
+  order                   Order[]
+}
+model Item {
+  id             Int              @id @default(autoincrement())
+  dish                    Dish[]
+  table                   Table[]
+  order_have_item         Order_have_Item[]
+}
+
+model Dish {
+  id             Int             @id
+  dish_type      DishCategory
+  price          Int
+  item           Item            @relation(fields: [id], references: [id])
+}
+
+model Table {
+  id             Int             @id
+  table_type     TableType
+  item           Item            @relation(fields: [id], references: [id])
+}
+
+model Order {
+  id                Int           @id @default(autoincrement())
+  order_date        DateTime      @default(now())
+  total_price       Int           @default(0)
+  customer_id       Int
+  customer          Customer      @relation(fields: [customer_id], references: [id])
+  order_applies_voucher   Order_applies_Voucher[]
+  order_have_item         Order_have_Item[]
+}
+
+model Voucher {
+  id                Int           @id @default(autoincrement())
+  denomination      String
+  issue_date        DateTime      @default(now())
+  expiration_date   Int           @default(30)
+  order_applies_voucher   Order_applies_Voucher[]
+  customer_have_voucher   Customer_have_Voucher[]
+}
+
+model Order_applies_Voucher {
+  order_id       Int
+  voucher_id     Int
+  order          Order    @relation(fields: [order_id], references: [id])
+  voucher        Voucher  @relation(fields: [voucher_id], references: [id])
+  @@id([order_id,voucher_id])
+}
+
+model Order_have_Item {
+  order_id       Int
+  item_id        Int
+  order          Order    @relation(fields: [order_id], references: [id])
+  item           Item     @relation(fields: [item_id], references: [id])
+  @@id([order_id,item_id])
+}
+
+model Customer_have_Voucher {
+  customer_id       Int
+  voucher_id        Int
+  customer          Customer    @relation(fields: [customer_id], references: [id])
+  voucher           Voucher     @relation(fields: [voucher_id], references: [id])
+  @@id([customer_id,voucher_id])
+}
+
+enum TableType {
+  TWO_SEATER       // Bàn 2 người
+  FOUR_SEATER      // Bàn 4 người
+  ROUND            // Bàn tròn
+  LONG             // Bàn dài
+  OUTDOOR          // Bàn ngoài trời
+  WINDOW_SIDE      // Bàn cạnh cửa sổ
+  FAMILY           // Bàn gia đình
+  VIP              // Bàn VIP
+  BAR_COUNTER      // Bàn quầy bar
+  RESERVED         // Bàn đặt trước
+}
+
+enum DishCategory {
+  APPETIZER        // Món khai vị
+  MAIN_COURSE      // Món chính
+  DESSERT          // Món tráng miệng
+  SIDE_DISH        // Món ăn kèm
+  VEGETARIAN       // Món chay
+  SPECIALTY        // Món đặc biệt
+  DAILY_SPECIAL    // Món trong ngày
+  GRILLED          // Món nướng
+  FRIED            // Món chiên
+  SOUP             // Món súp
+  SALAD            // Món salad
+  BEVERAGE         // Đồ uống
+}

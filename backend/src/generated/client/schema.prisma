@@ -1,0 +1,116 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/generated/client"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id                    Int                     @id @default(autoincrement())
+  first_name            String                  @db.VarChar(20)
+  last_name             String                  @db.VarChar(20)
+  email                 String                  @unique @db.VarChar(30)
+  password              String                  @db.VarChar(30)
+  phone_number          String                  @db.Char(10)
+  address               String                  @db.VarChar(50)
+  customer_have_voucher Customer_have_Voucher[]
+  order                 Order[]
+}
+
+model Item {
+  id              Int               @id @default(autoincrement())
+  dish            Dish?
+  order_have_item Order_have_Item[]
+  table           Table?
+}
+
+model Dish {
+  id        Int          @id
+  dish_type DishCategory
+  price     Int
+  item      Item         @relation(fields: [id], references: [id])
+}
+
+model Table {
+  id         Int       @id
+  table_type TableType
+  item       Item      @relation(fields: [id], references: [id])
+}
+
+model Order {
+  id                    Int                     @id @default(autoincrement())
+  order_date            DateTime                @default(now())
+  total_price           Int                     @default(0)
+  customer_id           Int
+  customer              Customer                @relation(fields: [customer_id], references: [id])
+  order_applies_voucher Order_applies_Voucher[]
+  order_have_item       Order_have_Item[]
+}
+
+model Voucher {
+  id                    Int                     @id @default(autoincrement())
+  denomination          String
+  issue_date            DateTime                @default(now())
+  expiration_date       Int                     @default(30)
+  customer_have_voucher Customer_have_Voucher[]
+  order_applies_voucher Order_applies_Voucher[]
+}
+
+model Order_applies_Voucher {
+  order_id   Int
+  voucher_id Int
+  order      Order   @relation(fields: [order_id], references: [id])
+  voucher    Voucher @relation(fields: [voucher_id], references: [id])
+
+  @@id([order_id, voucher_id])
+}
+
+model Order_have_Item {
+  order_id Int
+  item_id  Int
+  item     Item  @relation(fields: [item_id], references: [id])
+  order    Order @relation(fields: [order_id], references: [id])
+
+  @@id([order_id, item_id])
+}
+
+model Customer_have_Voucher {
+  customer_id Int
+  voucher_id  Int
+  customer    Customer @relation(fields: [customer_id], references: [id])
+  voucher     Voucher  @relation(fields: [voucher_id], references: [id])
+
+  @@id([customer_id, voucher_id])
+}
+
+enum TableType {
+  TWO_SEATER
+  FOUR_SEATER
+  ROUND
+  LONG
+  OUTDOOR
+  WINDOW_SIDE
+  FAMILY
+  VIP
+  BAR_COUNTER
+  RESERVED
+}
+
+enum DishCategory {
+  APPETIZER
+  MAIN_COURSE
+  DESSERT
+  SIDE_DISH
+  VEGETARIAN
+  SPECIALTY
+  DAILY_SPECIAL
+  GRILLED
+  FRIED
+  SOUP
+  SALAD
+  BEVERAGE
+}
